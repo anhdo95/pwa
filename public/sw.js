@@ -12,7 +12,6 @@ self.addEventListener('fetch', function(event) {
       .then(function(res) {
         if (res) return res
         
-        console.log('event.request', event.request)
         return fetch(event.request)
       })
   )

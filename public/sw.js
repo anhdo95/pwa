@@ -1,4 +1,4 @@
-const PRE_CACHE_NAME = 'static'
+const PRE_CACHE_NAME = 'static-v2'
 const DYNAMIC_CACHE_NAME = 'dynamic'
 
 self.addEventListener('install', function(event) {
@@ -25,6 +25,17 @@ self.addEventListener('install', function(event) {
 
 self.addEventListener('activate', function(event) {
   console.log('[Service Worker] Activating...', event)
+
+  event.waitUntil(
+    caches.keys()
+      .then(function(keys) {
+        return Promise.all(keys.map(function(key) {
+          if (![PRE_CACHE_NAME, DYNAMIC_CACHE_NAME].includes(key)) {
+            return caches.delete(key)
+          }
+        }))
+      })
+  )
 })
 
 self.addEventListener('fetch', function(event) {

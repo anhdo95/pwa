@@ -25,6 +25,12 @@ function closeCreatePostModal() {
   createPostArea.style.display = 'none';
 }
 
+function clearCards() {
+  while (sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild)
+  }
+}
+
 // function saveCard(event) {
 //   if (caches) {
 //     caches.open('user-requested')
@@ -68,10 +74,30 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get')
+const url = 'https://httpbin.org/get'
+let networkDataReceived = false
+
+fetch(url)
   .then(function(res) {
     return res.json();
   })
   .then(function(data) {
-    createCard();
+      networkDataReceived = true
+      console.log('From web')
+      clearCards()
+      createCard();
   });
+
+if (caches) {
+  caches.match(url)
+    .then(function(res) {
+      if (res) return res.json()
+    })
+    .then(function(data) {
+      if (!data || networkDataReceived) return
+
+      console.log('From cache')
+      clearCards()
+      createCard()
+    })
+}

@@ -1,5 +1,5 @@
-const PRE_CACHE_NAME = 'static-v3'
-const DYNAMIC_CACHE_NAME = 'dynamic'
+const PRE_CACHE_NAME = 'static-v4'
+const DYNAMIC_CACHE_NAME = 'dynamic-v4'
 
 self.addEventListener('install', function(event) {
   console.log('[Service Worker] Installing...', event)
@@ -39,7 +39,24 @@ self.addEventListener('activate', function(event) {
   )
 })
 
+// STRATEGY: Cache then Network
 self.addEventListener('fetch', function(event) {
+  const url = 'https://httpbin.org/get'
+
+  if (event.request.url === url) {
+    return event.respondWith(
+      caches.open(DYNAMIC_CACHE_NAME)
+        .then(function(cache) {
+          return fetch(event.request)
+            .then(function(res) {
+              cache.put(event.request, res.clone())
+    
+              return res
+            })
+        })
+    )
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(function(res) {

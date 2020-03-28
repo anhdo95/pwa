@@ -5,3 +5,36 @@
 .drawer-option {
   padding: 16px;
 }
+
+.offline-installation {
+  position: fixed;
+  left: 30px;
+  bottom: 0;
+  opacity: 0;
+  transform: translateY(80px);
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  color: #fff;
+  background-color: #3f51b5;
+  z-index: 1000;
+
+  transition: all .5s;
+}
+
+.offline-installation--active {
+  opacity: 1;
+  transform: translateY(-29px);
+}
+
+.offline-installation__action {
+  padding: 0.5rem 1.25rem;
+  color: #fff;
+  background-color: #ff4081;
+  border: none;
+  outline: none;
+  cursor: pointer;
+}

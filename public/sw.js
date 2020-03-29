@@ -1,5 +1,20 @@
-const PRE_CACHE_NAME = 'static-v4'
-const DYNAMIC_CACHE_NAME = 'dynamic-v4'
+const PRE_CACHE_NAME = 'static-v3'
+const DYNAMIC_CACHE_NAME = 'dynamic-v3'
+const STATIC_FILES = [
+  '/',
+  '/offline.html',
+  '/src/images/main-image.jpg',
+  '/src/css/app.css',
+  '/src/css/feed.css',
+  '/src/js/material.min.js',
+  '/src/js/app.js',
+  '/src/js/feed.js'
+]
+const CDNs = [
+  'https://fonts.googleapis.com/css?family=Roboto:400,700',
+  'https://fonts.googleapis.com/icon?family=Material+Icons',
+  'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
+]
 
 self.addEventListener('install', function(event) {
   console.log('[Service Worker] Installing...', event)
@@ -7,19 +22,7 @@ self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(PRE_CACHE_NAME)
       .then(function(cache) {
-        cache.addAll([
-          '/',
-          '/offline.html',
-          'https://fonts.googleapis.com/css?family=Roboto:400,700',
-          'https://fonts.googleapis.com/icon?family=Material+Icons',
-          'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
-          '/src/images/main-image.jpg',
-          '/src/css/app.css',
-          '/src/css/feed.css',
-          '/src/js/material.min.js',
-          '/src/js/app.js',
-          '/src/js/feed.js'
-        ])
+        cache.addAll(STATIC_FILES.concat(CDNs))
       })
   )
 })
@@ -49,11 +52,17 @@ self.addEventListener('fetch', function(event) {
         .then(function(cache) {
           return fetch(event.request)
             .then(function(res) {
-              cache.put(event.request, res.clone())
+              cache.put(event.request.url, res.clone())
     
               return res
             })
         })
+    )
+  }
+
+  if (STATIC_FILES.includes(event.request.url.replace(location.origin, ''))) {
+    return event.respondWith(
+      caches.match(event.request.url)
     )
   }
 

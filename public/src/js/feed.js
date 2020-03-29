@@ -2,6 +2,9 @@ var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
 var sharedMomentsArea = document.querySelector('#shared-moments');
+var form = document.querySelector('form');
+var titleInput = document.querySelector('#title');
+var locationInput = document.querySelector('#location');
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
@@ -88,29 +91,88 @@ function convertObjectToArray(object) {
   })
 }
 
+function createPost(post) {
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(post)
+  })
+  .then(function(res) {
+    console.log('res', res)
+    return res
+  })
+}
+
 
 const url = 'https://pwaprogram-3c120.firebaseio.com/posts.json'
-let networkDataReceived = false
 
-fetch(url, {
-  mode: 'cors'
-})
-  .then(function(res) {
-    return res.json();
-  })
-  .then(function(data) {
-      networkDataReceived = true
-      console.log('From web')
+function getPosts() {
+  let networkDataReceived = false
 
-      updateUI(convertObjectToArray(data))
-  });
-
-if (indexedDB) {
-  database.getPosts()
-    .then(function(posts) {
-      if (!posts || !posts.length || networkDataReceived) return
-
-      console.log('From cache')
-      updateUI(posts)
+  fetch(url)
+    .then(function(res) {
+      return res.json();
     })
+    .then(function(data) {
+        networkDataReceived = true
+        console.log('From web')
+
+        updateUI(convertObjectToArray(data))
+    });
+
+  if (indexedDB) {
+    database.getPosts()
+      .then(function(posts) {
+        if (!posts || !posts.length || networkDataReceived) return
+
+        console.log('From cache')
+        updateUI(posts)
+      })
+  }
 }
+
+getPosts()
+
+form.addEventListener('submit', function(event) {
+  event.preventDefault()
+
+  if (!titleInput.value.trim() || !locationInput.value.trim()) {
+    alert('Please enter valid data')
+    return
+  }
+
+  closeCreatePostModal()
+
+  const post = {
+    id: Date.now(),
+    title: titleInput.value.trim(),
+    location: locationInput.value.trim(),
+    image: 'https://firebasestorage.googleapis.com/v0/b/pwaprogram-3c120.appspot.com/o/sf-boat.jpg?alt=media&token=59325e5d-de4f-4b47-b39c-643c7b56a0ca'
+  }
+
+  if (navigator.serviceWorker && SyncManager) {
+    navigator.serviceWorker.ready
+      .then(function(sw) {
+        return database.insertSyncPost(post)
+          .then(function() {
+            return sw.sync.register('sync-new-posts')
+          })
+      })
+      .then(function() {
+        const snackbarContainer = document.getElementById('confirmation-toast')
+        const data = {
+          message: 'Your post was saved for syncing.',
+          timeout: 4000,
+        }
+        snackbarContainer.MaterialSnackbar.showSnackbar(data);
+      })
+  } else {
+    createPost(post)
+      .then(function() {
+        getPosts()
+      })
+  }
+})

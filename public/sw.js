@@ -118,3 +118,31 @@ self.addEventListener('fetch', function(event) {
       })
   )
 })
+
+self.addEventListener('sync', function(event) {
+  console.log('[Service Worker] Syncing...', event)
+  
+  if (event.tag === 'sync-new-posts') {
+    database.getSyncPosts()
+      .then(function(posts) {
+        posts.forEach(function(post) {
+          return fetch('https://pwaprogram-3c120.firebaseio.com/posts.json', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify(post)
+          })
+          .then(function(res) {
+            if (res.ok) {
+              return database.deleteSyncPost(post.id)
+            }
+          })
+        })
+      })
+      .catch(function(error) {
+        console.error('Error while sending data: ', error)
+      })
+  }
+})

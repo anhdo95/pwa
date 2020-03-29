@@ -69,7 +69,10 @@ self.addEventListener('fetch', function(event) {
         .then(function(res) {
           const clonedRes = res.clone()
 
-          clonedRes.json()
+          database.clearPosts()
+            .then(function() {
+              return clonedRes.json()
+            })
             .then(function(data) {
               Object.keys(data).forEach(function(key) {
                 database.insertPost(data[key])

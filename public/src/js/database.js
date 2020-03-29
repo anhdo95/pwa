@@ -25,5 +25,16 @@ const database = {
       
       return store.getAll()
     })
+  },
+
+  clearPosts() {
+    return dbPromise.then(function(db) {
+      const tx = db.transaction('posts', 'readwrite')
+      const store = tx.objectStore('posts')
+      
+      store.clear()
+
+      return tx.complete
+    })
   }
 }

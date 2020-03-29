@@ -42,10 +42,12 @@ self.addEventListener('activate', function(event) {
   )
 })
 
-// STRATEGY: Cache then Network
 self.addEventListener('fetch', function(event) {
   const url = 'https://httpbin.org/get'
 
+  console.log('event.request.headers', event.request.headers.get('accept'))
+  
+  // CACHE then NETWORK
   if (event.request.url === url) {
     return event.respondWith(
       caches.open(DYNAMIC_CACHE_NAME)
@@ -60,12 +62,14 @@ self.addEventListener('fetch', function(event) {
     )
   }
 
+  // CACHE-ONLY
   if (STATIC_FILES.includes(event.request.url.replace(location.origin, ''))) {
     return event.respondWith(
       caches.match(event.request.url)
     )
   }
 
+  // CACHE, fallback to NETWORK
   event.respondWith(
     caches.match(event.request)
       .then(function(res) {
@@ -83,7 +87,9 @@ self.addEventListener('fetch', function(event) {
           .catch(function(error) {
             return caches.open(PRE_CACHE_NAME)
               .then(function(cache) {
-                return cache.match('/offline.html')
+                if (event.request.headers.get('accept').includes('type/html')) {
+                  return cache.match('/offline.html')
+                }
               })
           })
       })

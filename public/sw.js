@@ -15,6 +15,7 @@ const CDNs = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
 ]
+const MAX_DYNAMIC_ITEMS = 10
 
 self.addEventListener('install', function(event) {
   console.log('[Service Worker] Installing...', event)
@@ -26,6 +27,18 @@ self.addEventListener('install', function(event) {
       })
   )
 })
+
+function trimCache(cacheName, maxItems) {
+  caches.open(cacheName)
+    .then(function(cache) {
+      cache.keys().then(function(keys) {
+        if (keys.length > maxItems) {
+          cache.delete(keys[0])
+            .then(trimCache(cacheName, maxItems))
+        }
+      })
+    })
+}
 
 self.addEventListener('activate', function(event) {
   console.log('[Service Worker] Activating...', event)
@@ -45,8 +58,6 @@ self.addEventListener('activate', function(event) {
 self.addEventListener('fetch', function(event) {
   const url = 'https://httpbin.org/get'
 
-  console.log('event.request.headers', event.request.headers.get('accept'))
-  
   // CACHE then NETWORK
   if (event.request.url === url) {
     return event.respondWith(
@@ -54,6 +65,7 @@ self.addEventListener('fetch', function(event) {
         .then(function(cache) {
           return fetch(event.request)
             .then(function(res) {
+              trimCache(DYNAMIC_CACHE_NAME, MAX_DYNAMIC_ITEMS)
               cache.put(event.request.url, res.clone())
     
               return res
@@ -79,6 +91,7 @@ self.addEventListener('fetch', function(event) {
           .then(function(res) {
             return caches.open(DYNAMIC_CACHE_NAME)
               .then(function(cache) {
+                trimCache(DYNAMIC_CACHE_NAME, MAX_DYNAMIC_ITEMS)
                 cache.put(event.request.url, res.clone())
 
                 return res

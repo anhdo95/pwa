@@ -1,5 +1,8 @@
-const PRE_CACHE_NAME = 'static-v3'
-const DYNAMIC_CACHE_NAME = 'dynamic-v3'
+importScripts('/src/js/idb.js')
+importScripts('/src/js/database.js')
+
+const PRE_CACHE_NAME = 'static-v1'
+const DYNAMIC_CACHE_NAME = 'dynamic-v1'
 const STATIC_FILES = [
   '/',
   '/offline.html',
@@ -7,6 +10,7 @@ const STATIC_FILES = [
   '/src/css/app.css',
   '/src/css/feed.css',
   '/src/js/material.min.js',
+  '/src/js/idb.js',
   '/src/js/app.js',
   '/src/js/feed.js'
 ]
@@ -15,7 +19,7 @@ const CDNs = [
   'https://fonts.googleapis.com/icon?family=Material+Icons',
   'https://cdnjs.cloudflare.com/ajax/libs/material-design-lite/1.3.0/material.indigo-pink.min.css',
 ]
-const MAX_DYNAMIC_ITEMS = 10
+const MAX_DYNAMIC_ITEMS = 100
 
 self.addEventListener('install', function(event) {
   console.log('[Service Worker] Installing...', event)
@@ -56,20 +60,23 @@ self.addEventListener('activate', function(event) {
 })
 
 self.addEventListener('fetch', function(event) {
-  const url = 'https://httpbin.org/get'
+  const url = 'https://pwaprogram-3c120.firebaseio.com/posts.json'
 
   // CACHE then NETWORK
   if (event.request.url === url) {
     return event.respondWith(
-      caches.open(DYNAMIC_CACHE_NAME)
-        .then(function(cache) {
-          return fetch(event.request)
-            .then(function(res) {
-              trimCache(DYNAMIC_CACHE_NAME, MAX_DYNAMIC_ITEMS)
-              cache.put(event.request.url, res.clone())
-    
-              return res
+      fetch(event.request)
+        .then(function(res) {
+          const clonedRes = res.clone()
+
+          clonedRes.json()
+            .then(function(data) {
+              Object.keys(data).forEach(function(key) {
+                database.insertPost(data[key])
+              })
             })
+
+          return res
         })
     )
   }

@@ -47,23 +47,23 @@ shareImageButton.addEventListener('click', openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
 
-function createCard() {
+function createCard(post) {
   var cardWrapper = document.createElement('div');
   cardWrapper.className = 'shared-moment-card mdl-card mdl-shadow--2dp';
   var cardTitle = document.createElement('div');
   cardTitle.className = 'mdl-card__title';
-  cardTitle.style.backgroundImage = 'url("/src/images/sf-boat.jpg")';
+  cardTitle.style.backgroundImage = `url("${post.image}")`;
   cardTitle.style.backgroundSize = 'cover';
   cardTitle.style.height = '180px';
   cardWrapper.appendChild(cardTitle);
   var cardTitleTextElement = document.createElement('h2');
   cardTitleTextElement.className = 'mdl-card__title-text';
-  cardTitleTextElement.textContent = 'San Francisco Trip';
+  cardTitleTextElement.textContent = post.title;
   cardTitleTextElement.style.color = 'black';
   cardTitle.appendChild(cardTitleTextElement);
   var cardSupportingText = document.createElement('div');
   cardSupportingText.className = 'mdl-card__supporting-text';
-  cardSupportingText.textContent = 'In San Francisco';
+  cardSupportingText.textContent = post.location;
   cardSupportingText.style.textAlign = 'center';
   // var cardSaveButton = document.createElement('button');
   // cardSaveButton.textContent = 'Save';
@@ -74,30 +74,43 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-const url = 'https://httpbin.org/get'
+function updateUI(posts) {
+  clearCards()
+
+  posts.forEach(function(post) {
+    createCard(post)
+  })
+}
+
+function convertObjectToArray(object) {
+  return Object.keys(object).map(function(key) {
+    return object[key]
+  })
+}
+
+
+const url = 'https://pwaprogram-3c120.firebaseio.com/posts.json'
 let networkDataReceived = false
 
-fetch(url)
+fetch(url, {
+  mode: 'cors'
+})
   .then(function(res) {
     return res.json();
   })
   .then(function(data) {
       networkDataReceived = true
       console.log('From web')
-      clearCards()
-      createCard();
+
+      updateUI(convertObjectToArray(data))
   });
 
-if (caches) {
-  caches.match(url)
-    .then(function(res) {
-      if (res) return res.json()
-    })
-    .then(function(data) {
-      if (!data || networkDataReceived) return
+if (indexedDB) {
+  database.getPosts()
+    .then(function(posts) {
+      if (!posts || !posts.length || networkDataReceived) return
 
       console.log('From cache')
-      clearCards()
-      createCard()
+      updateUI(posts)
     })
 }

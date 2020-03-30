@@ -17,12 +17,19 @@ window.addEventListener("DOMContentLoaded", function() {
   });
 
   if (Notification) {
+    function displayConfirmNotification() {
+      const options = {
+        body: 'You successfully subscribed our Notification service!'
+      }
+      new Notification('Successfully subscribed!', options)
+    }
+
     function askForNotificationPermission() {
       Notification.requestPermission(function(result) {
         if (result !== 'granted') {
           console.log('No notification permission granted.')
         } else {
-          
+          displayConfirmNotification()
         }
       })
     }

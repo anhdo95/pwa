@@ -162,3 +162,8 @@ self.addEventListener('notificationclick', function(event) {
   }
   notification.close()
 })
+
+// This might help to collect user-analytics on the notifications
+self.addEventListener('notificationclose', function(event) {
+  console.log('Notification was closed', event)
+})

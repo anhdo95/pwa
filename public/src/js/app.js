@@ -16,7 +16,7 @@ window.addEventListener("DOMContentLoaded", function() {
     deferredPrompt = e;
   });
 
-  if (Notification) {
+  if (Notification && navigator.serviceWorker) {
     function displayConfirmNotification() {
       const options = {
         body: 'You successfully subscribed our Notification service!',
@@ -33,12 +33,27 @@ window.addEventListener("DOMContentLoaded", function() {
         ]
       }
 
-      if (navigator.serviceWorker) {
-        navigator.serviceWorker.ready
-          .then(function (swReg) {
-            swReg.showNotification('Successfully subscribed!', options)
-          }) 
-      }
+      navigator.serviceWorker.ready
+        .then(function (swReg) {
+          swReg.showNotification('Successfully subscribed!', options)
+        }) 
+    }
+
+    function configurePushSubscription() {
+      navigator.serviceWorker.ready
+        .then(function (swReg) {
+          return swReg.pushManager.getSubscription()
+            .then(function(sub) {
+              if (sub) {
+                // We have a subscription
+              } else {
+                // Create a new subscription
+                swReg.pushManager.subscribe({
+                  userVisibleOnly: true
+                })
+              }
+            })
+        })
     }
 
     function askForNotificationPermission() {
@@ -46,7 +61,8 @@ window.addEventListener("DOMContentLoaded", function() {
         if (result !== 'granted') {
           console.log('No notification permission granted.')
         } else {
-          displayConfirmNotification()
+          configurePushSubscription()
+          // displayConfirmNotification()
         }
       })
     }

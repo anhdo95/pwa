@@ -60,7 +60,7 @@ self.addEventListener('activate', function(event) {
 })
 
 self.addEventListener('fetch', function(event) {
-  const url = 'https://us-central1-pwaprogram-3c120.cloudfunctions.net/storePostData'
+  const url = 'https://pwaprogram-3c120.firebaseio.com/posts.json'
 
   // CACHE then NETWORK
   if (event.request.url === url) {
@@ -147,4 +147,18 @@ self.addEventListener('sync', function(event) {
         console.error('Error while sending data: ', error)
       })
   }
+})
+
+self.addEventListener('notificationclick', function(event) {
+  const notification = event.notification
+  const action = event.action
+
+  console.log('notification', notification)
+
+  if (action === 'confirm') {
+    console.log('Confirm was chosen')
+  } else {
+    console.log(action)
+  }
+  notification.close()
 })

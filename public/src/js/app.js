@@ -19,9 +19,26 @@ window.addEventListener("DOMContentLoaded", function() {
   if (Notification) {
     function displayConfirmNotification() {
       const options = {
-        body: 'You successfully subscribed our Notification service!'
+        body: 'You successfully subscribed our Notification service!',
+        icon: '/src/images/icons/app-icon-96x96.png',
+        dir: 'ltr',
+        lang: 'vi-VN',
+        vibrate: [50, 20, 100],
+        badge: '/src/images/icons/app-icon-96x96.png',
+        tag: 'confirm-notification',
+        renotify: true,
+        actions: [
+          { action: 'confirm', title: 'Okay', icon: '/src/images/icons/app-icon-96x96.png' },
+          { action: 'cancel', title: 'Cancel', icon: '/src/images/icons/app-icon-96x96.png' },
+        ]
       }
-      new Notification('Successfully subscribed!', options)
+
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.ready
+          .then(function (swReg) {
+            swReg.showNotification('Successfully subscribed!', options)
+          }) 
+      }
     }
 
     function askForNotificationPermission() {

@@ -60,7 +60,7 @@ self.addEventListener('activate', function(event) {
 })
 
 self.addEventListener('fetch', function(event) {
-  const url = 'https://pwaprogram-3c120.firebaseio.com/posts.json'
+  const url = 'https://us-central1-pwaprogram-3c120.cloudfunctions.net/storePostData'
 
   // CACHE then NETWORK
   if (event.request.url === url) {
@@ -126,7 +126,7 @@ self.addEventListener('sync', function(event) {
     database.getSyncPosts()
       .then(function(posts) {
         posts.forEach(function(post) {
-          return fetch('https://pwaprogram-3c120.firebaseio.com/posts.json', {
+          return fetch('https://us-central1-pwaprogram-3c120.cloudfunctions.net/storePostData', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -136,7 +136,9 @@ self.addEventListener('sync', function(event) {
           })
           .then(function(res) {
             if (res.ok) {
-              return database.deleteSyncPost(post.id)
+              res.json().then(function(data) {
+                return database.deleteSyncPost(data.id)
+              })
             }
           })
         })

@@ -44,13 +44,30 @@ window.addEventListener("DOMContentLoaded", function() {
         .then(function (swReg) {
           return swReg.pushManager.getSubscription()
             .then(function(sub) {
-              if (sub) {
-                // We have a subscription
-              } else {
+              if (!sub) {
                 // Create a new subscription
-                swReg.pushManager.subscribe({
-                  userVisibleOnly: true
+                const vapidPublicKey = 'BBwfVEbDIbFxodxNNSFeHYy6dVjj-G4okmQypqrGxVyJWf1pxKQtkAQYzPqVPatc0swuw-_WPbxqlSxGke6tXTE'
+                const convertedPublicKey = util.urlBase64ToUint8Array(vapidPublicKey)
+
+                return swReg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: convertedPublicKey
                 })
+              }
+            })
+            .then(function(sub) {
+              return fetch('https://pwaprogram-3c120.firebaseio.com/subscriptions.json', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/json',
+                },
+                body: JSON.stringify(sub)
+              })
+            })
+            .then(function(res) {
+              if (res.ok) {
+                displayConfirmNotification()
               }
             })
         })

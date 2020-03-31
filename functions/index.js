@@ -1,8 +1,12 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const cors = require('cors')({ origin: true })
+const webpush = require('web-push')
 
 const serviceAccount = require('./firebase-adminsdk-key.json');
+
+const vapidPrivateKey = 'KNsq4LFn3bHe2ea6f8f44TXA9fN-z-Xqdho1aLOvYMw'
+const vapidPublicKey = 'BBwfVEbDIbFxodxNNSFeHYy6dVjj-G4okmQypqrGxVyJWf1pxKQtkAQYzPqVPatc0swuw-_WPbxqlSxGke6tXTE'
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -21,10 +25,32 @@ exports.storePostData = functions.https.onRequest(function(request, response) {
      image: request.body.image,
    })
    .then(function() {
-     response.status(201).json({
-       message: 'Data stored',
-       id: request.body.id
-     })
+     webpush.setVapidDetails('mailto:business@pwa.com', vapidPublicKey, vapidPrivateKey)
+     return admin.database().ref('subscriptions').once('value')
+   })
+   .then(function(subscriptions) {
+    subscriptions.forEach(function(sub) {
+      const pushConfig = {
+        endpoint: sub.val().endpoint,
+        keys: {
+          auth: sub.val().keys.auth,
+          p256dh: sub.val().keys.p256dh,
+        }
+      }
+
+      webpush.sendNotification(pushConfig, JSON.stringify({
+        title: 'New post',
+        content: 'New post added!'
+      }))
+      .catch(function(err) {
+        console.error(err)
+      })
+    })
+
+    response.status(201).json({
+      message: 'Data stored',
+      id: request.body.id
+    })
    })
    .catch(function(err) {
      response.status(500).json({ error: err })

@@ -5,9 +5,33 @@ var sharedMomentsArea = document.querySelector('#shared-moments');
 var form = document.querySelector('form');
 var titleInput = document.querySelector('#title');
 var locationInput = document.querySelector('#location');
+var videoPlayer = document.querySelector('#player');
+var canvasElement = document.querySelector('#canvas');
+var captureButton = document.querySelector('#capture-btn');
+var imagePickerArea = document.querySelector('#pick-image');
+var imagePicker = document.querySelector('#image-picker');
+
+function initializeMedia() {
+  if (!navigator.mediaDevices) {
+    navigator.mediaDevices = {}
+  }
+
+  if (!navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia = function(constraints) {
+      const getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+
+      if (!getUserMedia) return Promise.reject('getUserMedia is not implemented')
+
+      return new Promise(function(resolve, reject) {
+        return getUserMedia.call(navigator, constraints, resolve, reject)
+      })
+    }
+  }
+}
 
 function openCreatePostModal() {
   createPostArea.style.display = 'block';
+  initializeMedia()
 
   if (deferredPrompt) {
     deferredPrompt.prompt()

@@ -158,9 +158,27 @@ self.addEventListener('notificationclick', function(event) {
   if (action === 'confirm') {
     console.log('Confirm was chosen')
   } else {
-    console.log(action)
+    console.log('action', action)
+    event.waitUntil(
+      clients.matchAll()
+        .then(function(clis) {
+          const client = clis.find(function(c) {
+            return c.visibilityState === 'visible'
+          })
+
+          const url = (notification.data && notification.data.url) || '/'
+
+          if (client) {
+            client.navigate(url)
+            client.focus()
+          } else {
+            clients.openWindow(url)
+          }
+          
+          notification.close()
+        })
+    )
   }
-  notification.close()
 })
 
 // This might help to collect user-analytics on the notifications
@@ -173,7 +191,8 @@ self.addEventListener('push', function(event) {
 
   let data = {
     title: 'New!',
-    content: 'Something new happened.'
+    content: 'Something new happened.',
+    openUrl: '/'
   }
 
   if (event.data) {
@@ -183,7 +202,10 @@ self.addEventListener('push', function(event) {
   const options = {
     body: data.content,
     icon: '/src/images/icons/app-icon-96x96.png',
-    badge: '/src/images/icons/app-icon-96x96.png'
+    badge: '/src/images/icons/app-icon-96x96.png',
+    data: {
+      url: data.openUrl
+    }
   }
 
   event.waitUntil(

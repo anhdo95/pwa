@@ -62,7 +62,7 @@ captureButton.addEventListener('click', function(event) {
   captureButton.style.display = 'none'
   
   const context = canvasElement.getContext('2d')
-  context.drawImage(videoPlayer, 0, 0, canvasElement.width, canvasElement.height)
+  context.drawImage(videoPlayer, 0, 0, canvas.width, videoPlayer.videoHeight / (videoPlayer.videoWidth / canvas.width));
   
   videoPlayer.style.display = 'none'
   videoPlayer.srcObject.getVideoTracks().forEach(function(track) {
@@ -81,6 +81,8 @@ function closeCreatePostModal() {
   videoPlayer.style.display = 'none';
   canvasElement.style.display = 'none';
   imagePickerArea.style.display = 'none';
+
+  videoPlayer.srcObject.getVideoTracks().forEach(track => track.stop())
 }
 
 function clearCards() {

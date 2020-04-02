@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js')
 importScripts('/src/js/database.js')
 
-const PRE_CACHE_NAME = 'static-v15'
+const PRE_CACHE_NAME = 'static-v22'
 const DYNAMIC_CACHE_NAME = 'dynamic-v13'
 const STATIC_FILES = [
   '/',

@@ -4,7 +4,7 @@ const notifications = document.querySelectorAll('.enable-notifications')
 window.addEventListener("DOMContentLoaded", function() {
   if (navigator.serviceWorker) {
     navigator.serviceWorker
-      .register("/sw.js").then(function() {
+      .register("/service-worker.js").then(function() {
         console.log("Service worker registered");
       });
   }

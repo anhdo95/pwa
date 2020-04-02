@@ -1,4 +1,6 @@
-importScripts('workbox-sw.prod.v2.1.3.js');
+importScripts('workbox-sw.prod.v2.1.3.js')
+importScripts('/src/js/idb.js')
+importScripts('/src/js/database.js')
 
 const workboxSW = new self.WorkboxSW();
 
@@ -22,6 +24,20 @@ workboxSW.router.registerRoute('https://cdnjs.cloudflare.com/ajax/libs/material-
   workboxSW.strategies.staleWhileRevalidate({
     cacheName: 'material-css'
   })
+)
+
+workboxSW.router.registerRoute('https://pwaprogram-3c120.firebaseio.com/posts.json', 
+  async function(args) {
+    const res = await fetch(args.event.request)
+    const clonedRes = res.clone()
+    
+    await database.clearPosts()
+    const data = await clonedRes.json()    
+
+    Object.keys(data).forEach(key => database.insertPost(data[key]))
+
+    return res
+  }
 )
 
 
@@ -48,7 +64,7 @@ workboxSW.precache([
   },
   {
     "url": "service-worker.js",
-    "revision": "c238b98b97e66dde061ca573765ed005"
+    "revision": "a5b6fcb92c27d563a30e60393ea04a13"
   },
   {
     "url": "src/css/app.css",
@@ -88,7 +104,7 @@ workboxSW.precache([
   },
   {
     "url": "sw-base.js",
-    "revision": "9f8f6b8002dfb0f108291540e32a6e9c"
+    "revision": "5713fe3dfd990e1879a14fba5c607bc0"
   },
   {
     "url": "sw.js",

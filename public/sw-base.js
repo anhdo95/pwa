@@ -40,5 +40,25 @@ workboxSW.router.registerRoute('https://pwaprogram-3c120.firebaseio.com/posts.js
   }
 )
 
+workboxSW.router.registerRoute(function(route) {
+  return route.event.request.headers.get('accept').includes('text/html')
+}, async function(args) {
+  try {
+    const res = await caches.match(args.event.request)
+    if (res) return res
+          
+    const [requestedRes, cache] = await Promise.all([
+      fetch(args.event.request),
+      caches.open('dynamic')
+    ])
+
+    cache.put(args.event.request.url, requestedRes.clone())
+
+    return requestedRes
+  } catch (error) {
+    return caches.match('/offline.html')
+  }
+})
+
 
 workboxSW.precache([]);

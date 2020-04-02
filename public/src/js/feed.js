@@ -10,8 +10,9 @@ var canvasElement = document.querySelector('#canvas');
 var captureButton = document.querySelector('#capture-btn');
 var imagePickerArea = document.querySelector('#pick-image');
 var imagePicker = document.querySelector('#image-picker');
+var picture
 
-function initializeMedia() {
+async function initializeMedia() {
   if (!navigator.mediaDevices) {
     navigator.mediaDevices = {}
   }
@@ -28,14 +29,13 @@ function initializeMedia() {
     }
   }
 
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(function(stream) {
-      videoPlayer.srcObject = stream
-      videoPlayer.style.display = 'block'
-    })
-    .catch(function(err) {
-      imagePickerArea.style.display = 'block'
-    })
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    videoPlayer.srcObject = stream
+    videoPlayer.style.display = 'block'
+  } catch (error) {
+    imagePickerArea.style.display = 'block'
+  }
 }
 
 function openCreatePostModal() {
@@ -57,6 +57,25 @@ function openCreatePostModal() {
   }
 }
 
+captureButton.addEventListener('click', function(event) {
+  canvasElement.style.display = 'block'
+  captureButton.style.display = 'none'
+  
+  const context = canvasElement.getContext('2d')
+  context.drawImage(videoPlayer, 0, 0, canvasElement.width, canvasElement.height)
+  
+  videoPlayer.style.display = 'none'
+  videoPlayer.srcObject.getVideoTracks().forEach(function(track) {
+    track.stop()
+  })
+
+  picture = util.dataURItoBlob(canvasElement.toDataURL())
+})
+
+imagePicker.addEventListener('change', event => {
+  picture = event.target.files[0]
+})
+
 function closeCreatePostModal() {
   createPostArea.style.display = 'none';
   videoPlayer.style.display = 'none';
@@ -69,18 +88,6 @@ function clearCards() {
     sharedMomentsArea.removeChild(sharedMomentsArea.lastChild)
   }
 }
-
-// function saveCard(event) {
-//   if (caches) {
-//     caches.open('user-requested')
-//       .then(function(cache) {
-//         cache.addAll([
-//           'https://httpbin.org/get',
-//           '/src/images/sf-boat.jpg'
-//         ])
-//       })
-//   }
-// }
 
 shareImageButton.addEventListener('click', openCreatePostModal);
 
@@ -128,17 +135,15 @@ function convertObjectToArray(object) {
 }
 
 function createPost(post) {
+  const formData = new FormData()
+  formData.append('id', post.id)
+  formData.append('title', post.title)
+  formData.append('location', post.location)
+  formData.append('file', post.picture, `${post.id}.png`)
+
   return fetch(url, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(post)
-  })
-  .then(function(res) {
-    console.log('res', res)
-    return res
+    body: formData
   })
 }
 
@@ -153,10 +158,12 @@ function getPosts() {
       return res.json();
     })
     .then(function(data) {
-        networkDataReceived = true
-        console.log('From web')
+      if (!data) return
 
-        updateUI(convertObjectToArray(data))
+      networkDataReceived = true
+      console.log('From web')
+
+      updateUI(convertObjectToArray(data))
     });
 
   if (indexedDB) {
@@ -186,7 +193,7 @@ form.addEventListener('submit', function(event) {
     id: Date.now(),
     title: titleInput.value.trim(),
     location: locationInput.value.trim(),
-    image: 'https://firebasestorage.googleapis.com/v0/b/pwaprogram-3c120.appspot.com/o/sf-boat.jpg?alt=media&token=59325e5d-de4f-4b47-b39c-643c7b56a0ca'
+    picture
   }
 
   if (navigator.serviceWorker && SyncManager) {

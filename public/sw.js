@@ -1,8 +1,8 @@
 importScripts('/src/js/idb.js')
 importScripts('/src/js/database.js')
 
-const PRE_CACHE_NAME = 'static-v1'
-const DYNAMIC_CACHE_NAME = 'dynamic-v1'
+const PRE_CACHE_NAME = 'static-v15'
+const DYNAMIC_CACHE_NAME = 'dynamic-v13'
 const STATIC_FILES = [
   '/',
   '/offline.html',
@@ -10,6 +10,8 @@ const STATIC_FILES = [
   '/src/css/app.css',
   '/src/css/feed.css',
   '/src/js/material.min.js',
+  '/src/js/util.js',
+  '/src/js/database.js',
   '/src/js/idb.js',
   '/src/js/app.js',
   '/src/js/feed.js'
@@ -126,13 +128,15 @@ self.addEventListener('sync', function(event) {
     database.getSyncPosts()
       .then(function(posts) {
         posts.forEach(function(post) {
+          const formData = new FormData()
+          formData.append('id', post.id)
+          formData.append('title', post.title)
+          formData.append('location', post.location)
+          formData.append('file', post.picture, `${post.id}.png`)
+
           return fetch('https://us-central1-pwaprogram-3c120.cloudfunctions.net/storePostData', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify(post)
+            body: formData
           })
           .then(function(res) {
             if (res.ok) {
@@ -157,7 +161,7 @@ self.addEventListener('notificationclick', function(event) {
 
   if (action === 'confirm') {
     console.log('Confirm was chosen')
-  } else {
+  } else {  
     console.log('action', action)
     event.waitUntil(
       clients.matchAll()

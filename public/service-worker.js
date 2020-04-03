@@ -40,6 +40,26 @@ workboxSW.router.registerRoute('https://pwaprogram-3c120.firebaseio.com/posts.js
   }
 )
 
+workboxSW.router.registerRoute(function(route) {
+  return route.event.request.headers.get('accept').includes('text/html')
+}, async function(args) {
+  try {
+    const res = await caches.match(args.event.request)
+    if (res) return res
+          
+    const [requestedRes, cache] = await Promise.all([
+      fetch(args.event.request),
+      caches.open('dynamic')
+    ])
+
+    cache.put(args.event.request.url, requestedRes.clone())
+
+    return requestedRes
+  } catch (error) {
+    return caches.match('/offline.html')
+  }
+})
+
 
 workboxSW.precache([
   {
@@ -64,7 +84,7 @@ workboxSW.precache([
   },
   {
     "url": "service-worker.js",
-    "revision": "a5b6fcb92c27d563a30e60393ea04a13"
+    "revision": "b53d1a224dcfbf27b56d9c3a672d1226"
   },
   {
     "url": "src/css/app.css",
@@ -104,7 +124,7 @@ workboxSW.precache([
   },
   {
     "url": "sw-base.js",
-    "revision": "5713fe3dfd990e1879a14fba5c607bc0"
+    "revision": "a2212689d599eba41249588f51df7e31"
   },
   {
     "url": "sw.js",
@@ -131,3 +151,102 @@ workboxSW.precache([
     "revision": "0f282d64b0fb306daf12050e812d6a19"
   }
 ]);
+
+
+
+// Synchronization
+self.addEventListener('sync', function(event) {
+  console.log('[Service Worker] Syncing...', event)
+  
+  if (event.tag === 'sync-new-posts') {
+    database.getSyncPosts()
+      .then(function(posts) {
+        posts.forEach(function(post) {
+          const formData = new FormData()
+          formData.append('id', post.id)
+          formData.append('title', post.title)
+          formData.append('location', post.location)
+          formData.append('file', post.picture, `${post.id}.png`)
+
+          return fetch('https://us-central1-pwaprogram-3c120.cloudfunctions.net/storePostData', {
+            method: 'POST',
+            body: formData
+          })
+          .then(function(res) {
+            if (res.ok) {
+              res.json().then(function(data) {
+                return database.deleteSyncPost(data.id)
+              })
+            }
+          })
+        })
+      })
+      .catch(function(error) {
+        console.error('Error while sending data: ', error)
+      })
+  }
+})
+
+self.addEventListener('notificationclick', function(event) {
+  const notification = event.notification
+  const action = event.action
+
+  console.log('notification', notification)
+
+  if (action === 'confirm') {
+    console.log('Confirm was chosen')
+  } else {  
+    console.log('action', action)
+    event.waitUntil(
+      clients.matchAll()
+        .then(function(clis) {
+          const client = clis.find(function(c) {
+            return c.visibilityState === 'visible'
+          })
+
+          const url = (notification.data && notification.data.url) || '/'
+
+          if (client) {
+            client.navigate(url)
+            client.focus()
+          } else {
+            clients.openWindow(url)
+          }
+          
+          notification.close()
+        })
+    )
+  }
+})
+
+// This might help to collect user-analytics on the notifications
+self.addEventListener('notificationclose', function(event) {
+  console.log('Notification was closed', event)
+})
+
+self.addEventListener('push', function(event) {
+  console.log('Push Notification received', event)
+
+  let data = {
+    title: 'New!',
+    content: 'Something new happened.',
+    openUrl: '/'
+  }
+
+  if (event.data) {
+    data = JSON.parse(event.data.text())
+  }
+
+  const options = {
+    body: data.content,
+    icon: '/src/images/icons/app-icon-96x96.png',
+    badge: '/src/images/icons/app-icon-96x96.png',
+    data: {
+      url: data.openUrl
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  )
+})
